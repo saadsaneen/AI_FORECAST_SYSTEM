@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales History - Food Demand Forecasting</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body data-page="sales-history" class="min-h-full flex flex-col">
+
+    <!-- Top Navigation Bar -->
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <!-- App Title & Back Link -->
+                <div class="flex items-center gap-4">
+                    <a href="/dashboard" class="text-slate-500 hover:text-slate-900 transition flex items-center gap-1 text-sm font-semibold">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                        Dashboard
+                    </a>
+                    <span class="text-slate-300">|</span>
+                    <span class="font-bold text-slate-900 text-base sm:text-lg tracking-tight">Sales History & Analytics</span>
+                </div>
+
+                <!-- User Info & Logout -->
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm font-semibold text-slate-800">{{ name }}</span>
+                        {% if role == 'owner' %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                👑 Owner
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">
+                                🍳 Kitchen Staff
+                            </span>
+                        {% endif %}
+                    </div>
+                    <button id="logout-btn" 
+                            class="text-xs font-semibold text-slate-600 hover:text-red-600 hover:bg-red-50 px-3 py-2 rounded-lg border border-slate-200 transition flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        
+        <!-- Dynamic Alert Container -->
+        <div id="alert-container" class="hidden"></div>
+
+        <!-- Filter Controls Section -->
+        <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+            <h2 class="text-base font-bold text-slate-900 mb-4">Filter Sales Records</h2>
+            
+            <form id="filter-form" class="grid grid-cols-1 sm:grid-cols-4 gap-4 items-end">
+                <div>
+                    <label for="filter_item_id" class="block text-xs font-semibold text-slate-700 mb-1">Food Item</label>
+                    <select id="filter_item_id" name="item_id" 
+                            class="w-full px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm">
+                        <option value="">All Food Items</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="start_date" class="block text-xs font-semibold text-slate-700 mb-1">From Date</label>
+                    <input id="start_date" name="start_date" type="date" 
+                           class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm">
+                </div>
+
+                <div>
+                    <label for="end_date" class="block text-xs font-semibold text-slate-700 mb-1">To Date</label>
+                    <input id="end_date" name="end_date" type="date" 
+                           class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm">
+                </div>
+
+                <div class="flex gap-2">
+                    <button id="filter-btn" type="submit"
+                            class="flex-1 py-2.5 px-4 rounded-xl text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-md shadow-emerald-600/20 transition flex items-center justify-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                        </svg>
+                        Apply Filter
+                    </button>
+                    <button id="reset-filter-btn" type="button"
+                            class="py-2.5 px-4 rounded-xl text-sm font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 transition">
+                        Reset
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Summary Metrics Section -->
+        <div>
+            <h3 class="text-base font-bold text-slate-900 mb-3">Sales Summary (Selected Period)</h3>
+            <div id="summary-cards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 text-center text-slate-400">
+                    Loading summary metrics...
+                </div>
+            </div>
+        </div>
+
+        <!-- Sales History Table Card -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+                <div>
+                    <h3 class="text-base font-bold text-slate-900">Historical Sales Log</h3>
+                    <p class="text-xs text-slate-500">Filtered sales records list</p>
+                </div>
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+                    Total Entries: <strong id="sales-count" class="ml-1 text-slate-900">0</strong>
+                </span>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider border-b border-slate-200">
+                            <th class="px-6 py-3.5">Sl. No.</th>
+                            <th class="px-6 py-3.5">Date</th>
+                            <th class="px-6 py-3.5">Item Name</th>
+                            <th class="px-6 py-3.5">Quantity Sold</th>
+                            <th class="px-6 py-3.5">Logged By</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-sales-list" class="divide-y divide-slate-100 text-sm">
+                        <tr>
+                            <td colspan="5" class="px-6 py-8 text-center text-slate-400">
+                                Loading sales history...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

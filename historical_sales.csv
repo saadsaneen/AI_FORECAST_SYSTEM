@@ -1,0 +1,18 @@
+date,item,quantity_sold,unit,is_event
+2026-09-01,Porotta,45,pieces,0
+2026-09-01,Pathiri,30,pieces,0
+2026-09-01,Chappathi,25,pieces,0
+2026-09-01,Biriyani,18,plates,0
+2026-09-02,porotta,50,pieces,0
+2026-09-02,pathiri,35,pieces,0
+2026-09-02,biriyani,22,plates,0
+2026-09-03,Porotta,40,pieces,0
+2026-09-03,Chappathi,30,pieces,0
+2026-09-03,Biriyani,20,plates,0
+2026-09-04,Porotta,65,pieces,1
+2026-09-04,Pathiri,45,pieces,1
+2026-09-04,Biriyani,35,plates,1
+2026-09-05,Porotta,55,pieces,0
+2026-09-05,Biriyani,28,plates,0
+2026-09-06,Porotta,,pieces,0
+2026-09-06,Unknown Juice,10,glasses,0

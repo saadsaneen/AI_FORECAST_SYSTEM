@@ -42,6 +42,20 @@ def init_db():
         cursor.execute("ALTER TABLE items ADD COLUMN price REAL NOT NULL DEFAULT 0.0")
         print("[DB] Added 'price' column to items table.")
 
+    # Create SALES_RECORD table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS sales_record (
+            sale_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            date TEXT NOT NULL DEFAULT (DATE('now')),
+            item_id INTEGER NOT NULL,
+            quantity_sold REAL NOT NULL,
+            unit TEXT NOT NULL,
+            logged_by INTEGER NOT NULL,
+            FOREIGN KEY (item_id) REFERENCES items(item_id),
+            FOREIGN KEY (logged_by) REFERENCES users(user_id)
+        )
+    """)
+
     # Seed owner account if not exists
     cursor.execute("SELECT * FROM users WHERE name = ?", ("owner",))
     owner = cursor.fetchone()

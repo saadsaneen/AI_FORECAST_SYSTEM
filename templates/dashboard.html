@@ -105,7 +105,45 @@
                 </p>
             </div>
 
-            <!-- Card 3: Food Menu Management (OWNER ONLY) -->
+            <!-- Card 3: Log Daily Sales (ALL USERS) -->
+            <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition space-y-4">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold uppercase tracking-wider text-emerald-700">Sales Entry</span>
+                    <span class="text-lg">💰</span>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900">Log Daily Sales</h3>
+                    <p class="text-xs text-slate-600 mt-1">Record quantities sold for dishes on any given date.</p>
+                </div>
+                <a href="/sales-entry" 
+                   class="inline-flex items-center justify-center w-full py-2.5 px-4 rounded-xl text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 transition gap-2">
+                    Log Sale
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                </a>
+            </div>
+
+            <!-- Card 4: Sales History (ALL USERS) -->
+            <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition space-y-4">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold uppercase tracking-wider text-indigo-700">Analytics</span>
+                    <span class="text-lg">📊</span>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900">Sales History</h3>
+                    <p class="text-xs text-slate-600 mt-1">Filter and view past sales logs by item or custom date range.</p>
+                </div>
+                <a href="/sales-history" 
+                   class="inline-flex items-center justify-center w-full py-2.5 px-4 rounded-xl text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition gap-2">
+                    View Sales History
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                </a>
+            </div>
+
+            <!-- Card 5: Food Menu Management (OWNER ONLY) -->
             {% if role == 'owner' %}
             <div class="bg-white rounded-2xl p-6 border-2 border-emerald-500/30 shadow-sm hover:shadow-md transition space-y-4 relative bg-emerald-50/20">
                 <div class="flex items-center justify-between">
