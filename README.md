@@ -59,42 +59,37 @@ Open your browser and navigate to `http://127.0.0.1:5050`.
 
 ## 🧪 Manual Testing Instructions
 
-### Test 1: Registering a Staff User (Privilege Escalation Security Test)
-1. Navigate to `http://127.0.0.1:5050/register`.
-2. Notice the UI contains **only** `Username` and `Password` fields (no role selector).
-3. Enter username: `kitchen_staff_1` and password: `staffpassword123`.
-4. Click **Create Account**. You will see a green success alert and get redirected to `/login`.
-5. *(Optional inspection)* Open `database.db` with SQLite viewer or query python:
-   `SELECT name, role FROM users WHERE name='kitchen_staff_1';`
-   - **Expected Result**: Row is created with `role = 'staff'`.
-   - Even if an attacker uses Postman/cURL to send `{"name": "hacker", "password": "pass", "role": "owner"}`, the server ignores the payload and hardcodes `role = 'staff'`.
+### Test 1: User Registration
 
-### Test 2: Login Behavior (Correct vs Incorrect Credentials)
-1. Navigate to `http://127.0.0.1:5050/login`.
-2. Try invalid password: Username `owner`, Password `wrongpassword`.
-   - **Expected Result**: Red alert box displays generic error: `Invalid username or password` (HTTP 401).
-3. Try nonexistent user: Username `fakeuser`, Password `any`.
-   - **Expected Result**: Red alert box displays identical generic error: `Invalid username or password` (HTTP 401).
-4. Login with correct owner credentials: Username `owner`, Password `owner123`.
-   - **Expected Result**: Login succeeds and redirects to `/dashboard`.
+1. Navigate to `/register`.
+2. Create a new test account using the registration form.
+3. Submit the form.
+4. **Expected Result:** The account is created successfully and the user is redirected to the login page.
 
-### Test 3: Session Persistence & Unauthenticated Access Block
-1. While logged in as `owner`, refresh the page (`F5`).
-   - **Expected Result**: Dashboard remains visible and displays `Welcome back, owner!`.
-2. Click **Logout** button in top navbar.
-   - **Expected Result**: Redirected back to `/login`.
-3. Manually type `http://127.0.0.1:5050/dashboard` in browser address bar.
-   - **Expected Result**: Server detects unauthenticated state and redirects to `/login`.
+### Test 2: Login Behavior
 
-### Test 4: Role-Based Navigation & Page Access (Owner vs Staff)
-1. **Login as Owner (`owner` / `owner123`)**:
-   - On `/dashboard`, notice the **Manage Food Menu** card with button `Open Food Menu`.
-   - Click `Open Food Menu` or navigate to `/food-menu`.
-   - **Expected Result**: Page loads cleanly displaying existing menu items (*Porotta*, *Pathiri*, *Chappathi*, *Biriyani*). You can add new items or delete items.
-2. **Login as Staff (`kitchen_staff_1` / `staffpassword123`)**:
-   - On `/dashboard`, notice the badge says `🍳 Kitchen Staff` and the **Manage Food Menu** section is **hidden**.
-   - Manually type `http://127.0.0.1:5050/food-menu` in address bar.
-   - **Expected Result**: Server redirects staff user back to `/dashboard`.
+1. Navigate to `/login`.
+2. Enter the credentials of a registered test account.
+3. **Expected Result:** Valid credentials allow the user to log in and access the dashboard.
+4. Try an incorrect password.
+5. **Expected Result:** A generic `Invalid username or password` message is displayed.
+
+### Test 3: Session Persistence & Logout
+
+1. Log in using a registered test account.
+2. Refresh the dashboard.
+3. **Expected Result:** The logged-in session remains active.
+4. Click **Logout**.
+5. **Expected Result:** The user is redirected to the login page.
+6. Try accessing `/dashboard` after logout.
+7. **Expected Result:** Unauthenticated users are redirected to the login page.
+
+### Test 4: Food Menu Access
+
+1. Log in to the application.
+2. Navigate to the dashboard.
+3. Open the **Food Menu** section.
+4. **Expected Result:** Existing food items are displayed and authorized users can add or delete menu items.
 
 
 ### Test 5: API Security Enforcement (403 Forbidden on direct API calls)
