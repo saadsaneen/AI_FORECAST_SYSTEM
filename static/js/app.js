@@ -200,6 +200,49 @@ async function setupDashboardPage() {
     if (logoutBtn) {
         logoutBtn.addEventListener("click", logoutUser);
     }
+
+    // Load Sprint 4 live weather card
+    loadDashboardWeather();
+}
+
+async function loadDashboardWeather() {
+    const weatherBox = document.getElementById("dashboard-weather");
+    if (!weatherBox) return;
+
+    try {
+        const res = await fetch("/weather/current");
+        if (!res.ok) throw new Error("Weather service offline");
+        const data = await res.json();
+
+        if (data.configured && data.current) {
+            const temp = data.current.temperature_c;
+            const emoji = data.current.emoji || "☀️";
+            const desc = data.current.description || "Clear";
+            const impact = data.demand_impact_note || "Normal demand expected";
+            const city = data.location ? data.location.city : "Nettoor, Ernakulam";
+
+            weatherBox.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-2xl font-bold text-slate-900">${temp !== null && temp !== undefined ? Math.round(temp) + "°C" : "--"} <span class="text-xl">${emoji}</span></div>
+                        <div class="text-xs font-semibold text-slate-600 mt-0.5">${desc} • ${city}</div>
+                    </div>
+                    <span class="text-3xl">${emoji}</span>
+                </div>
+                <div class="mt-3 p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 font-medium">
+                    ${impact}
+                </div>
+            `;
+        } else {
+            weatherBox.innerHTML = `
+                <p class="text-xs text-slate-500">${data.message || "Weather integration configured."}</p>
+            `;
+        }
+    } catch (err) {
+        weatherBox.innerHTML = `
+            <div class="text-xs text-slate-500">Weather service temporarily offline. Will retry automatically.</div>
+        `;
+    }
 }
 
 // --- Food Menu Page Logic ---

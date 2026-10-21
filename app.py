@@ -5,6 +5,8 @@ from auth import auth_bp
 from items import items_bp
 from sales import sales_bp
 from waste import waste_bp
+from forecast import forecast_bp
+from weather import weather_bp
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "super-secret-key-food-forecast-sprint1")
@@ -15,6 +17,8 @@ app.register_blueprint(auth_bp)
 app.register_blueprint(items_bp)
 app.register_blueprint(sales_bp)
 app.register_blueprint(waste_bp)
+app.register_blueprint(forecast_bp)
+app.register_blueprint(weather_bp)
 
 # Page Routes
 @app.route("/")
@@ -68,8 +72,25 @@ def waste_log_page():
         return redirect(url_for("login_page"))
     return render_template("waste-log.html", name=session.get("name"), role=session.get("role"))
 
+@app.route("/events")
+@app.route("/events-management")
+def events_page():
+    """Sprint 4 – Events management page (owner only for write, read for all)."""
+    if "user_id" not in session:
+        return redirect(url_for("login_page"))
+    return render_template("events.html", name=session.get("name"), role=session.get("role"))
+
+@app.route("/demand-adjustment")
+def demand_adjustment_page():
+    """Sprint 4 – Manual demand adjustment page (owner only)."""
+    if "user_id" not in session:
+        return redirect(url_for("login_page"))
+    if session.get("role") != "owner":
+        return redirect(url_for("dashboard_page"))
+    return render_template("demand-adjustment.html", name=session.get("name"), role=session.get("role"))
+
 if __name__ == "__main__":
     init_db()
-    print("Starting Flask web server for Food Demand Forecasting System (Sprint 3) on port 5050...")
+    print("Starting Flask web server for Food Demand Forecasting System (Sprint 4) on port 5050...")
     app.run(host="127.0.0.1", port=5050, debug=True)
 

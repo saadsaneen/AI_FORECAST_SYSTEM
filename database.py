@@ -70,6 +70,36 @@ def init_db():
         )
     """)
 
+    # ── Sprint 4 Tables ──────────────────────────────────────────────────────
+
+    # Create EVENTS table (special days — festivals, holidays, functions)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS events (
+            event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            event_name TEXT NOT NULL,
+            event_date TEXT NOT NULL,
+            multiplier REAL NOT NULL DEFAULT 1.3,
+            notes TEXT,
+            created_by INTEGER NOT NULL,
+            FOREIGN KEY (created_by) REFERENCES users(user_id)
+        )
+    """)
+
+    # Create DEMAND_ADJUSTMENTS table (owner manual override of forecast)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS demand_adjustments (
+            adj_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            item_id INTEGER NOT NULL,
+            forecast_date TEXT NOT NULL,
+            adjusted_qty REAL NOT NULL,
+            notes TEXT,
+            adjusted_by INTEGER NOT NULL,
+            created_at TEXT NOT NULL DEFAULT (DATETIME('now')),
+            FOREIGN KEY (item_id) REFERENCES items(item_id),
+            FOREIGN KEY (adjusted_by) REFERENCES users(user_id)
+        )
+    """)
+
     # Seed owner account if not exists
     cursor.execute("SELECT * FROM users WHERE name = ?", ("owner",))
     owner = cursor.fetchone()

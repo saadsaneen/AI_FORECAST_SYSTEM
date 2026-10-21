@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Demand Adjustment - Rahath Foods</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .fade-in { animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    </style>
+</head>
+<body data-page="demand-adjustment" class="min-h-full flex flex-col">
+
+    <!-- Top Navigation Bar -->
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-4">
+                    <a href="/dashboard" class="text-slate-500 hover:text-slate-900 transition flex items-center gap-1 text-sm font-semibold">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                        Dashboard
+                    </a>
+                    <span class="text-slate-300">|</span>
+                    <span class="font-bold text-slate-900 text-base sm:text-lg tracking-tight">🎯 Manual Demand Adjustment</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm font-semibold text-slate-800">{{ name }}</span>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                            👑 Owner
+                        </span>
+                    </div>
+                    <button id="logout-btn"
+                            class="text-xs font-semibold text-slate-600 hover:text-red-600 hover:bg-red-50 px-3 py-2 rounded-lg border border-slate-200 transition flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+        <!-- Alert Container -->
+        <div id="alert-container" class="hidden"></div>
+
+        <!-- Info Banner -->
+        <div class="bg-amber-50 border border-amber-200 rounded-xl px-5 py-4 flex gap-3 items-start">
+            <span class="text-amber-500 text-lg mt-0.5">⚠️</span>
+            <div>
+                <p class="text-sm font-semibold text-amber-900">Manual Adjustment — Not AI Prediction</p>
+                <p class="text-xs text-amber-800 mt-0.5">
+                    Use this to <strong>manually set</strong> the expected quantity for a food item on a specific date.
+                    This overrides any event-based adjustment. It uses your personal experience and judgment,
+                    <em>not</em> a machine-learning model. Automated demand prediction will be added in Sprint 5.
+                </p>
+            </div>
+        </div>
+
+        <!-- Adjustment Form -->
+        <div class="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-900">Set Manual Demand Quantity</h2>
+                    <p class="text-xs text-slate-500">
+                        Owner-only. Specify how many units of a food item you expect to sell on a given date.
+                    </p>
+                </div>
+                <span class="text-2xl">🎯</span>
+            </div>
+
+            <form id="adjustment-form" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                <div>
+                    <label for="item_id" class="block text-xs font-semibold text-slate-700 mb-1">Food Item *</label>
+                    <select id="item_id" name="item_id" required
+                            class="w-full px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-sm">
+                        <option value="">Loading items...</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="forecast_date" class="block text-xs font-semibold text-slate-700 mb-1">Date *</label>
+                    <input id="forecast_date" name="forecast_date" type="date" required
+                           class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-sm">
+                </div>
+
+                <div>
+                    <label for="adjusted_qty" class="block text-xs font-semibold text-slate-700 mb-1">
+                        Expected Quantity *
+                        <span id="unit-hint" class="font-normal text-slate-400"></span>
+                    </label>
+                    <input id="adjusted_qty" name="adjusted_qty" type="number" step="1" min="0" required
+                           class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-sm"
+                           placeholder="e.g. 60">
+                </div>
+
+                <div>
+                    <button id="save-adj-btn" type="submit"
+                            class="w-full py-2.5 px-4 rounded-xl text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-md shadow-amber-600/20 transition flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        Save Adjustment
+                    </button>
+                </div>
+
+                <div class="sm:col-span-2 lg:col-span-4">
+                    <label for="adj_notes" class="block text-xs font-semibold text-slate-700 mb-1">Reason / Notes (recommended)</label>
+                    <input id="adj_notes" name="notes" type="text"
+                           class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 text-sm"
+                           placeholder="e.g. Eid holiday — expecting higher footfall; or: Catering order reduces public sale">
+                </div>
+            </form>
+        </div>
+
+        <!-- Adjustments List -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+                <div>
+                    <h3 class="text-base font-bold text-slate-900">Saved Demand Adjustments</h3>
+                    <p class="text-xs text-slate-500">Manual quantity targets set for future dates. Saving again for the same item + date will replace the old value.</p>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider border-b border-slate-200">
+                            <th class="px-6 py-3.5">Food Item</th>
+                            <th class="px-6 py-3.5">Date</th>
+                            <th class="px-6 py-3.5">Adjusted Qty</th>
+                            <th class="px-6 py-3.5">Notes / Reason</th>
+                            <th class="px-6 py-3.5">Set By</th>
+                            <th class="px-6 py-3.5">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adjustments-list" class="divide-y divide-slate-100 text-sm">
+                        <tr>
+                            <td colspan="6" class="px-6 py-8 text-center text-slate-400">Loading adjustments...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <script src="/static/js/app.js"></script>
+    <script>
+        // Populate items dropdown and show unit hint
+        async function loadItems() {
+            try {
+                const res = await fetch('/items');
+                const data = await res.json();
+                const select = document.getElementById('item_id');
+                select.innerHTML = '<option value="">Select a food item</option>';
+                (data.items || []).forEach(item => {
+                    const opt = document.createElement('option');
+                    opt.value = item.item_id;
+                    opt.textContent = `${item.item_name} (${item.unit})`;
+                    opt.dataset.unit = item.unit;
+                    select.appendChild(opt);
+                });
+            } catch (err) {
+                document.getElementById('item_id').innerHTML = '<option value="">Failed to load items</option>';
+            }
+        }
+
+        // Update unit hint when item changes
+        document.getElementById('item_id').addEventListener('change', function() {
+            const opt = this.options[this.selectedIndex];
+            const unit = opt ? opt.dataset.unit : '';
+            document.getElementById('unit-hint').textContent = unit ? `(${unit})` : '';
+        });
+
+        // Load adjustments list
+        async function loadAdjustments() {
+            try {
+                const res = await fetch('/adjustments');
+                const data = await res.json();
+                renderAdjustments(data.adjustments || []);
+            } catch (err) {
+                document.getElementById('adjustments-list').innerHTML =
+                    `<tr><td colspan="6" class="px-6 py-8 text-center text-red-400">Failed to load adjustments.</td></tr>`;
+            }
+        }
+
+        function renderAdjustments(adjustments) {
+            const tbody = document.getElementById('adjustments-list');
+            if (!adjustments.length) {
+                tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-10 text-center text-slate-400">
+                    No manual adjustments saved yet. Use the form above to add one.
+                </td></tr>`;
+                return;
+            }
+
+            const today = new Date().toISOString().split('T')[0];
+            tbody.innerHTML = adjustments.map(adj => {
+                const isPast = adj.forecast_date < today;
+                const rowClass = isPast ? 'opacity-60' : '';
+                return `<tr class="hover:bg-slate-50 transition ${rowClass} fade-in">
+                    <td class="px-6 py-4 font-semibold text-slate-900">${escapeHtml(adj.item_name)}</td>
+                    <td class="px-6 py-4 text-slate-600">${adj.forecast_date}${isPast ? ' <span class="text-xs text-slate-400">(past)</span>' : ''}</td>
+                    <td class="px-6 py-4">
+                        <span class="font-bold text-amber-700">${adj.adjusted_qty}</span>
+                        <span class="text-xs text-slate-400 ml-1">${escapeHtml(adj.unit)}</span>
+                        <span class="ml-2 text-xs bg-amber-50 text-amber-600 border border-amber-200 px-1.5 py-0.5 rounded font-semibold">Manual</span>
+                    </td>
+                    <td class="px-6 py-4 text-slate-500 text-xs">${adj.notes ? escapeHtml(adj.notes) : '—'}</td>
+                    <td class="px-6 py-4 text-slate-500">${escapeHtml(adj.adjusted_by_name)}</td>
+                    <td class="px-6 py-4">
+                        <button onclick="deleteAdjustment(${adj.adj_id}, '${escapeHtml(adj.item_name)}')"
+                            class="text-xs font-semibold text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded-lg border border-red-200 transition">
+                            Delete
+                        </button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        async function deleteAdjustment(adjId, itemName) {
+            if (!confirm(`Delete the manual adjustment for "${itemName}"?`)) return;
+            try {
+                const res = await fetch(`/adjustments/${adjId}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (data.success) {
+                    showAlert('alert-container', data.message, 'success');
+                    loadAdjustments();
+                } else {
+                    showAlert('alert-container', data.error || 'Delete failed.', 'error');
+                }
+            } catch (err) {
+                showAlert('alert-container', 'Network error. Please try again.', 'error');
+            }
+        }
+
+        // Form submission
+        document.getElementById('adjustment-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('save-adj-btn');
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+
+            const payload = {
+                item_id: parseInt(document.getElementById('item_id').value),
+                forecast_date: document.getElementById('forecast_date').value,
+                adjusted_qty: parseFloat(document.getElementById('adjusted_qty').value),
+                notes: document.getElementById('adj_notes').value.trim()
+            };
+
+            try {
+                const res = await fetch('/adjustments', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showAlert('alert-container', data.message, 'success');
+                    document.getElementById('adjustment-form').reset();
+                    document.getElementById('unit-hint').textContent = '';
+                    loadAdjustments();
+                } else {
+                    showAlert('alert-container', data.error || 'Failed to save adjustment.', 'error');
+                }
+            } catch (err) {
+                showAlert('alert-container', 'Network error. Please try again.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg> Save Adjustment`;
+            }
+        });
+
+        // Logout
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            await fetch('/logout', { method: 'POST' });
+            window.location.href = '/login';
+        });
+
+        // Set default date to tomorrow
+        const tmr = new Date();
+        tmr.setDate(tmr.getDate() + 1);
+        document.getElementById('forecast_date').value = tmr.toISOString().split('T')[0];
+
+        // Init
+        loadItems();
+        loadAdjustments();
+    </script>
+</body>
+</html>
