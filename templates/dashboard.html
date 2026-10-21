@@ -143,7 +143,26 @@
                 </a>
             </div>
 
-            <!-- Card 5: Food Menu Management (OWNER ONLY) -->
+            <!-- Card 5: Log Kitchen Waste (ALL USERS) -->
+            <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition space-y-4">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold uppercase tracking-wider text-rose-700">Waste Log</span>
+                    <span class="text-lg">🗑️</span>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900">Log Kitchen Waste</h3>
+                    <p class="text-xs text-slate-600 mt-1">Record leftover or discarded food items to track waste.</p>
+                </div>
+                <a href="/waste-log" 
+                   class="inline-flex items-center justify-center w-full py-2.5 px-4 rounded-xl text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 shadow-md shadow-rose-600/20 transition gap-2">
+                    Log Waste
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                </a>
+            </div>
+
+            <!-- Card 6: Food Menu Management (OWNER ONLY) -->
             {% if role == 'owner' %}
             <div class="bg-white rounded-2xl p-6 border-2 border-emerald-500/30 shadow-sm hover:shadow-md transition space-y-4 relative bg-emerald-50/20">
                 <div class="flex items-center justify-between">
@@ -162,6 +181,26 @@
                     </svg>
                 </a>
             </div>
+
+            <!-- Card 7: Database Viewer (OWNER ONLY) -->
+            <!--
+            <div class="bg-white rounded-2xl p-6 border-2 border-slate-400/30 shadow-sm hover:shadow-md transition space-y-4 relative bg-slate-50/50">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-700">Owner Action</span>
+                    <span class="text-lg">🗄️</span>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900">Database Inspector</h3>
+                    <p class="text-xs text-slate-600 mt-1">View live SQLite tables, schemas, and stored records in browser.</p>
+                </div>
+                <a href="/db-viewer" 
+                   class="inline-flex items-center justify-center w-full py-2.5 px-4 rounded-xl text-sm font-semibold text-white bg-slate-800 hover:bg-slate-900 shadow-md transition gap-2">
+                    View Database Tables
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                </a>
+            </div>  -->
             {% endif %}
 
         </div>

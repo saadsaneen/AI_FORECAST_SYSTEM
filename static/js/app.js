@@ -91,6 +91,8 @@ document.addEventListener("DOMContentLoaded", () => {
         setupSalesEntryPage();
     } else if (pageId === "sales-history") {
         setupSalesHistoryPage();
+    } else if (pageId === "waste-log") {
+        setupWasteLogPage();
     }
 });
 
@@ -669,6 +671,192 @@ async function fetchSalesHistory() {
                 </td>
             </tr>
         `;
+    }
+}
+
+// --- Waste Log Page Logic (Sprint 3) ---
+async function setupWasteLogPage() {
+    const sessionData = await fetchSession();
+    if (!sessionData.logged_in) {
+        window.location.href = "/login";
+        return;
+    }
+
+    const logoutBtn = document.getElementById("logout-btn");
+    if (logoutBtn) {
+        logoutBtn.addEventListener("click", logoutUser);
+    }
+
+    // Set default date to today
+    const dateInput = document.getElementById("date");
+    if (dateInput && !dateInput.value) {
+        dateInput.value = getTodayString();
+    }
+
+    // Populate Food Items Select Dropdown
+    await populateFoodItemDropdown("item_id");
+
+    // Load Waste Logs List
+    await loadWasteLogs(sessionData.user.role);
+
+    // Handle Form Submit
+    const form = document.getElementById("waste-log-form");
+    const saveBtn = document.getElementById("save-waste-btn");
+
+    if (form) {
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            hideAlert("alert-container");
+            setButtonLoading(saveBtn, true, "Log Waste");
+
+            const itemId = document.getElementById("item_id").value;
+            const quantity = parseFloat(document.getElementById("quantity_wasted").value);
+            const wasteDate = document.getElementById("date").value;
+
+            if (!itemId) {
+                showAlert("alert-container", "Please select a food item.", "error");
+                setButtonLoading(saveBtn, false, "Log Waste");
+                return;
+            }
+
+            if (isNaN(quantity) || quantity <= 0) {
+                showAlert("alert-container", "Quantity wasted must be a positive number.", "error");
+                setButtonLoading(saveBtn, false, "Log Waste");
+                return;
+            }
+
+            if (wasteDate > getTodayString()) {
+                showAlert("alert-container", "Waste log date cannot be in the future.", "error");
+                setButtonLoading(saveBtn, false, "Log Waste");
+                return;
+            }
+
+            try {
+                const response = await fetch("/waste", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        item_id: parseInt(itemId),
+                        quantity_wasted: quantity,
+                        date: wasteDate
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showAlert("alert-container", data.message || "Waste entry recorded successfully!", "success");
+                    document.getElementById("quantity_wasted").value = "";
+                    if (dateInput) dateInput.value = getTodayString();
+                    await loadWasteLogs(sessionData.user.role);
+                } else {
+                    showAlert("alert-container", data.error || "Failed to record waste entry.", "error");
+                }
+            } catch (err) {
+                showAlert("alert-container", "Network error while saving waste entry.", "error");
+            } finally {
+                setButtonLoading(saveBtn, false, "Log Waste");
+            }
+        });
+    }
+}
+
+// Load waste entries into waste-log table
+async function loadWasteLogs(userRole = "") {
+    const listContainer = document.getElementById("waste-list");
+    const countBadge = document.getElementById("waste-count");
+    if (!listContainer) return;
+
+    try {
+        const response = await fetch("/waste");
+        const data = await response.json();
+        const wasteLogs = data.waste || [];
+
+        if (countBadge) {
+            countBadge.textContent = wasteLogs.length;
+        }
+
+        const isOwner = userRole === "owner";
+        const colSpan = isOwner ? 6 : 5;
+
+        if (wasteLogs.length === 0) {
+            listContainer.innerHTML = `
+                <tr>
+                    <td colspan="${colSpan}" class="px-6 py-8 text-center text-slate-500">
+                        No waste entries recorded yet. Use the form above to log kitchen waste!
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        listContainer.innerHTML = wasteLogs.map((entry, index) => `
+            <tr class="hover:bg-slate-50 transition-colors border-b border-slate-100">
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">#${index + 1}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600 font-medium">${escapeHtml(entry.date)}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-800">
+                    <span class="inline-flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                        ${escapeHtml(entry.item_name)}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-rose-600">
+                    ${entry.quantity_wasted} ${escapeHtml(entry.unit)}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+                        👤 ${escapeHtml(entry.logged_by_name)}
+                    </span>
+                </td>
+                ${isOwner ? `
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button onclick="deleteWasteEntry(${entry.waste_id}, '${escapeHtml(entry.item_name)}')" 
+                            class="inline-flex items-center gap-1.5 text-xs font-semibold text-red-600 hover:text-red-800 hover:bg-red-50 px-3 py-1.5 rounded-lg border border-red-200 transition">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Delete
+                    </button>
+                </td>
+                ` : ''}
+            </tr>
+        `).join("");
+    } catch (err) {
+        console.error("Error loading waste logs:", err);
+        listContainer.innerHTML = `
+            <tr>
+                <td colspan="6" class="px-6 py-8 text-center text-red-600">
+                    Error loading waste logs. Please refresh.
+                </td>
+            </tr>
+        `;
+    }
+}
+
+// Delete waste entry handler (Owner Only)
+async function deleteWasteEntry(wasteId, itemName) {
+    if (!confirm(`Are you sure you want to delete this waste record for '${itemName}'?`)) {
+        return;
+    }
+
+    hideAlert("alert-container");
+
+    try {
+        const response = await fetch(`/waste/${wasteId}`, {
+            method: "DELETE"
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            showAlert("alert-container", `Waste record for '${itemName}' deleted.`, "success");
+            const sessionData = await fetchSession();
+            await loadWasteLogs(sessionData.user ? sessionData.user.role : "");
+        } else {
+            showAlert("alert-container", data.error || "Failed to delete waste record.", "error");
+        }
+    } catch (err) {
+        showAlert("alert-container", "Network error while deleting waste record.", "error");
     }
 }
 

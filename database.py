@@ -56,6 +56,20 @@ def init_db():
         )
     """)
 
+    # Create WASTE_LOG table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS waste_log (
+            waste_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            date TEXT NOT NULL DEFAULT (DATE('now')),
+            item_id INTEGER NOT NULL,
+            quantity_wasted REAL NOT NULL,
+            unit TEXT NOT NULL,
+            logged_by INTEGER NOT NULL,
+            FOREIGN KEY (item_id) REFERENCES items(item_id),
+            FOREIGN KEY (logged_by) REFERENCES users(user_id)
+        )
+    """)
+
     # Seed owner account if not exists
     cursor.execute("SELECT * FROM users WHERE name = ?", ("owner",))
     owner = cursor.fetchone()

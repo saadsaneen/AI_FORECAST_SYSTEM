@@ -4,6 +4,7 @@ from database import init_db
 from auth import auth_bp
 from items import items_bp
 from sales import sales_bp
+from waste import waste_bp
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "super-secret-key-food-forecast-sprint1")
@@ -13,6 +14,7 @@ app.config["SESSION_COOKIE_NAME"] = "food_demand_session_sprint1"
 app.register_blueprint(auth_bp)
 app.register_blueprint(items_bp)
 app.register_blueprint(sales_bp)
+app.register_blueprint(waste_bp)
 
 # Page Routes
 @app.route("/")
@@ -60,8 +62,14 @@ def sales_history_page():
         return redirect(url_for("login_page"))
     return render_template("sales-history.html", name=session.get("name"), role=session.get("role"))
 
+@app.route("/waste-log")
+def waste_log_page():
+    if "user_id" not in session:
+        return redirect(url_for("login_page"))
+    return render_template("waste-log.html", name=session.get("name"), role=session.get("role"))
+
 if __name__ == "__main__":
     init_db()
-    print("Starting Flask web server for Food Demand Forecasting System (Sprint 2) on port 5050...")
+    print("Starting Flask web server for Food Demand Forecasting System (Sprint 3) on port 5050...")
     app.run(host="127.0.0.1", port=5050, debug=True)
 
