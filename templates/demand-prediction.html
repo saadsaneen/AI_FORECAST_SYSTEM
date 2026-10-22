@@ -135,7 +135,7 @@
             <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
                 <div>
                     <h3 class="text-base font-bold text-slate-900">👨‍🍳 Kitchen Preparation Summary</h3>
-                    <p class="text-xs text-slate-500">Final preparation quantities recommended for the kitchen after applying event multipliers and manual adjustments.</p>
+                    <p class="text-xs text-slate-500">Final preparation targets and estimated main raw material requirements, including event multipliers and manual adjustments.</p>
                 </div>
                 {% if role == 'owner' %}
                 <a href="/demand-adjustment" class="text-xs font-semibold text-amber-700 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 px-3 py-1.5 rounded-lg border border-amber-200 transition">
@@ -153,12 +153,13 @@
                             <th class="px-6 py-3.5">Event Multiplier</th>
                             <th class="px-6 py-3.5">Manual Override</th>
                             <th class="px-6 py-3.5">Final Target</th>
+                            <th class="px-6 py-3.5">Main Raw Material Requirement</th>
                             <th class="px-6 py-3.5">Final Decision Source</th>
                         </tr>
                     </thead>
                     <tbody id="prep-table-body" class="divide-y divide-slate-100 text-sm">
                         <tr>
-                            <td colspan="6" class="px-6 py-6 text-center text-slate-400">Loading kitchen preparation data...</td>
+                            <td colspan="7" class="px-6 py-6 text-center text-slate-400">Loading kitchen preparation data...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -193,6 +194,13 @@
     <script src="/static/js/app.js"></script>
     <script>
         const USER_ROLE = "{{ role }}";
+        const MAIN_RAW_MATERIALS = {
+            pathiri: "Rice flour",
+            appam: "Rice flour",
+            chappathi: "Wheat flour",
+            porotta: "Maida",
+            biriyani: "Rice"
+        };
         const dateInput = document.getElementById("target-date");
 
         // Helper to format Date to YYYY-MM-DD
@@ -362,12 +370,13 @@
         function renderPrepTable(items) {
             const tbody = document.getElementById("prep-table-body");
             if (!items || !items.length) {
-                tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-6 text-center text-slate-400">No data available.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="px-6 py-6 text-center text-slate-400">No data available.</td></tr>`;
                 return;
             }
 
             tbody.innerHTML = items.map(item => {
                 const isManual = item.final_source === "Manual Override";
+                const rawMaterial = MAIN_RAW_MATERIALS[item.item_name.toLowerCase()] || "Main raw material";
                 return `
                 <tr class="hover:bg-slate-50 transition">
                     <td class="px-6 py-4 font-bold text-slate-900 flex items-center gap-2">
@@ -382,6 +391,10 @@
                     <td class="px-6 py-4">
                         <span class="text-base font-extrabold text-slate-900">${item.final_demand}</span>
                         <span class="text-xs text-slate-500 font-semibold">${item.unit}</span>
+                    </td>
+                    <td class="px-6 py-4 text-slate-700">
+                        <span class="font-semibold">${escapeHtml(rawMaterial)}</span>
+                        <span class="block text-xs text-slate-500">${item.final_demand} ${escapeHtml(item.unit)}</span>
                     </td>
                     <td class="px-6 py-4">
                         <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${isManual ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-700'}">
