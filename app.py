@@ -89,8 +89,16 @@ def demand_adjustment_page():
         return redirect(url_for("dashboard_page"))
     return render_template("demand-adjustment.html", name=session.get("name"), role=session.get("role"))
 
+@app.route("/demand-prediction")
+@app.route("/forecast-page")
+def demand_prediction_page():
+    """Sprint 5 – AI Food Demand Forecasting & Kitchen Preparation page (all logged-in users)."""
+    if "user_id" not in session:
+        return redirect(url_for("login_page"))
+    return render_template("demand-prediction.html", name=session.get("name"), role=session.get("role"))
+
 if __name__ == "__main__":
     init_db()
-    print("Starting Flask web server for Food Demand Forecasting System (Sprint 4) on port 5050...")
+    print("Starting Flask web server for Food Demand Forecasting System (Sprint 5) on port 5050...")
     app.run(host="127.0.0.1", port=5050, debug=True)
 

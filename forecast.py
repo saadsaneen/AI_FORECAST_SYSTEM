@@ -366,3 +366,139 @@ def forecast_summary():
         "next_event": next_event,
         "active_adjustments": active_adjustments
     }), 200
+
+
+# ─── SPRINT 5: ML DEMAND PREDICTION ──────────────────────────────────────────
+
+@forecast_bp.route("/api/forecast/predict", methods=["GET"])
+@login_required
+def api_predict_demand():
+    """
+    GET /api/forecast/predict?date=YYYY-MM-DD
+    Generates ML predictions for all 5 food items, combining:
+    - Raw ML prediction from Model 1 or Model 2 (via ml_engine)
+    - Active event demand multiplier from events table (if scheduled)
+    - Weather forecast & impact note from Open-Meteo
+    - Manual demand adjustments from demand_adjustments table (precedence override)
+    """
+    date_str = request.args.get("date", "").strip()
+    if not date_str:
+        target_date = date.today() + timedelta(days=1)
+    else:
+        target_date, err = _parse_date(date_str, "date")
+        if err or target_date is None:
+            return jsonify({"error": err or "Invalid date format (use YYYY-MM-DD)"}), 400
+
+    from ml_engine import predict_all_for_date
+    ml_result = predict_all_for_date(target_date)
+    if not ml_result.get("success"):
+        return jsonify({"error": ml_result.get("error", "Prediction failed")}), 500
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # 1. Check for Event on target_date
+    cursor.execute(
+        "SELECT event_id, event_name, multiplier, notes FROM events WHERE event_date = ?",
+        (target_date.isoformat(),)
+    )
+    event_row = cursor.fetchone()
+    event_info = dict(event_row) if event_row else None
+    event_multiplier = float(event_row["multiplier"]) if event_row else 1.0
+
+    # 2. Check for Manual Demand Adjustments on target_date
+    cursor.execute("""
+        SELECT a.item_id, a.adjusted_qty, a.notes, i.item_name
+        FROM demand_adjustments a
+        JOIN items i ON a.item_id = i.item_id
+        WHERE a.forecast_date = ?
+    """, (target_date.isoformat(),))
+    adj_rows = cursor.fetchall()
+    adjustments_by_item = {}
+    for r in adj_rows:
+        adjustments_by_item[r["item_name"].strip().lower()] = {
+            "adjusted_qty": float(r["adjusted_qty"]),
+            "notes": r["notes"]
+        }
+
+    conn.close()
+
+    # 3. Check Weather for target_date (if within forecast range)
+    weather_info = None
+    try:
+        from weather import _fetch_weather, _wmo_label, _demand_impact
+        from config import coordinates_configured
+        if coordinates_configured():
+            w_data = _fetch_weather(days=7)
+            daily = w_data.get("daily", {})
+            times = daily.get("time", [])
+            target_iso = target_date.isoformat()
+            if target_iso in times:
+                idx = times.index(target_iso)
+                code = daily.get("weather_code", [])[idx]
+                label, emoji = _wmo_label(code)
+                prob = daily.get("precipitation_probability_max", [])[idx]
+                weather_info = {
+                    "description": label,
+                    "emoji": emoji,
+                    "max_temp_c": daily.get("temperature_2m_max", [])[idx],
+                    "min_temp_c": daily.get("temperature_2m_min", [])[idx],
+                    "rain_prob_pct": prob,
+                    "demand_impact_note": _demand_impact(code, prob)
+                }
+    except Exception:
+        weather_info = None
+
+    # 4. Assemble final integrated predictions
+    final_items = []
+    for it in ml_result.get("items", []):
+        raw_pred = it.get("raw_prediction", 0.0)
+        item_lower = it["item_name"].strip().lower()
+
+        # Apply event multiplier
+        event_adjusted = round(raw_pred * event_multiplier, 2)
+
+        # Check for manual adjustment
+        manual_adj = adjustments_by_item.get(item_lower)
+        if manual_adj:
+            final_demand = manual_adj["adjusted_qty"]
+            final_source = "Manual Override"
+            adjustment_note = f"Overridden by owner target ({manual_adj['adjusted_qty']} {it['unit']}). Note: {manual_adj['notes'] or 'None'}"
+        elif event_info:
+            final_demand = event_adjusted
+            final_source = f"Event Multiplier (x{event_multiplier})"
+            adjustment_note = f"Scaled by {event_info['event_name']} multiplier (x{event_multiplier})."
+        else:
+            final_demand = raw_pred
+            final_source = "Raw ML Model"
+            adjustment_note = "Standard baseline prediction."
+
+        final_items.append({
+            "item_name": it["item_name"],
+            "unit": it["unit"],
+            "model_used": it["model_used"],
+            "selection_reason": it["selection_reason"],
+            "raw_prediction": raw_pred,
+            "previous_sales": it.get("previous_sales", []),
+            "event_multiplier": event_multiplier,
+            "event_adjusted_demand": event_adjusted,
+            "manual_adjustment": manual_adj["adjusted_qty"] if manual_adj else None,
+            "final_demand": final_demand,
+            "final_source": final_source,
+            "status_note": it.get("status_note", ""),
+            "adjustment_note": adjustment_note
+        })
+
+    return jsonify({
+        "success": True,
+        "date": target_date.isoformat(),
+        "calendar_info": ml_result.get("calendar_info"),
+        "event": event_info,
+        "weather": weather_info,
+        "items": final_items,
+        "evaluation_notice": (
+            "Model Selection Guidance: Pathiri selected Model 1 (Calendar Features) which achieved lower MAE in evaluation. "
+            "Appam, Chappathi, Porotta, and Biriyani selected Model 2 (Calendar + Previous Sales) which achieved lower MAE with prior history. "
+            "ML predictions are statistical forecasts based on historical patterns; actual demand may vary."
+        )
+    }), 200

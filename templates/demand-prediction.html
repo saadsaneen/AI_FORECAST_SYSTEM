@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Demand Prediction & Kitchen Preparation - Rahath Foods</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    </style>
+</head>
+<body data-page="demand-prediction" class="min-h-full flex flex-col">
+
+    <!-- Navigation Bar -->
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-20 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-4">
+                    <a href="/dashboard" class="text-slate-500 hover:text-slate-900 transition flex items-center gap-1 text-sm font-semibold">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                        Dashboard
+                    </a>
+                    <span class="text-slate-300">|</span>
+                    <span class="font-bold text-slate-900 text-base sm:text-lg tracking-tight flex items-center gap-2">
+                        <span>🔮</span> AI Demand Prediction & Preparation
+                    </span>
+                    <span class="hidden md:inline-block text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                        Sprint 5 ML Models
+                    </span>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm font-semibold text-slate-800">{{ name }}</span>
+                        {% if role == 'owner' %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                👑 Owner
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">
+                                🍳 Kitchen Staff
+                            </span>
+                        {% endif %}
+                    </div>
+                    <button id="logout-btn"
+                            class="text-xs font-semibold text-slate-600 hover:text-red-600 hover:bg-red-50 px-3 py-2 rounded-lg border border-slate-200 transition flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+        <!-- Alert Container -->
+        <div id="alert-container" class="hidden"></div>
+
+        <!-- Date Selection Card -->
+        <div class="bg-white rounded-2xl p-6 sm:p-7 border border-slate-200 shadow-sm">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-900">Forecast Target Date</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Select any target date to calculate machine learning demand predictions and preparation targets.</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <button type="button" id="btn-today" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition">Today</button>
+                    <button type="button" id="btn-tomorrow" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 transition">Tomorrow</button>
+                    <div class="flex items-center gap-2">
+                        <input type="date" id="target-date" class="px-3 py-1.5 rounded-lg text-sm border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        <button type="button" id="btn-run-forecast" class="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition flex items-center gap-1.5">
+                            <span>✨</span> Forecast
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Context & Factors Banner -->
+        <div id="context-banner" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Calendar Card -->
+            <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-1">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Calendar Features</span>
+                <div id="cal-details" class="text-sm font-semibold text-slate-900 pt-1">Loading date features...</div>
+                <div id="cal-sub" class="text-xs text-slate-500">Day of week, Day of year</div>
+            </div>
+
+            <!-- Event Card -->
+            <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-1">
+                <span class="text-xs font-bold uppercase tracking-wider text-violet-600">Event Multiplier</span>
+                <div id="event-details" class="text-sm font-semibold text-slate-900 pt-1">Checking events...</div>
+                <div id="event-sub" class="text-xs text-slate-500">Sprint 4 Event Integration</div>
+            </div>
+
+            <!-- Weather Card -->
+            <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-1">
+                <span class="text-xs font-bold uppercase tracking-wider text-sky-600">Weather Condition</span>
+                <div id="weather-details" class="text-sm font-semibold text-slate-900 pt-1">Checking weather...</div>
+                <div id="weather-sub" class="text-xs text-slate-500">Open-Meteo Nettoor Forecast</div>
+            </div>
+        </div>
+
+        <!-- Food Predictions Grid -->
+        <div>
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900">Item-by-Item Demand Predictions</h3>
+                    <p class="text-xs text-slate-500">Predicted quantities generated via trained scikit-learn models (Model 1 & Model 2).</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-slate-500 font-medium">All predictions calibrated in:</span>
+                    <span class="text-xs font-bold text-slate-800 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200">Kilograms (kg)</span>
+                </div>
+            </div>
+
+            <div id="predictions-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Rendered dynamically -->
+                <div class="col-span-full py-16 text-center text-slate-400">Loading demand predictions...</div>
+            </div>
+        </div>
+
+        <!-- Kitchen Preparation Summary Table -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+                <div>
+                    <h3 class="text-base font-bold text-slate-900">👨‍🍳 Kitchen Preparation Summary</h3>
+                    <p class="text-xs text-slate-500">Final preparation quantities recommended for the kitchen after applying event multipliers and manual adjustments.</p>
+                </div>
+                {% if role == 'owner' %}
+                <a href="/demand-adjustment" class="text-xs font-semibold text-amber-700 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 px-3 py-1.5 rounded-lg border border-amber-200 transition">
+                    ✏️ Manual Demand Override Form
+                </a>
+                {% endif %}
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider border-b border-slate-200">
+                            <th class="px-6 py-3.5">Food Item</th>
+                            <th class="px-6 py-3.5">Raw ML Forecast</th>
+                            <th class="px-6 py-3.5">Event Multiplier</th>
+                            <th class="px-6 py-3.5">Manual Override</th>
+                            <th class="px-6 py-3.5">Final Target</th>
+                            <th class="px-6 py-3.5">Final Decision Source</th>
+                        </tr>
+                    </thead>
+                    <tbody id="prep-table-body" class="divide-y divide-slate-100 text-sm">
+                        <tr>
+                            <td colspan="6" class="px-6 py-6 text-center text-slate-400">Loading kitchen preparation data...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Model Selection & Evaluation Transparency Box -->
+        <div class="bg-indigo-50/60 border border-indigo-200 rounded-2xl p-6 sm:p-7 space-y-3">
+            <div class="flex items-center gap-2">
+                <span class="text-xl">📊</span>
+                <h4 class="text-sm font-bold text-indigo-950">Model Selection & Transparency Notice</h4>
+            </div>
+            <div class="text-xs text-indigo-900/90 leading-relaxed space-y-2">
+                <p>
+                    <strong>Evaluation-Guided Model Assignment:</strong> In our historical model evaluation,
+                    <strong>Pathiri</strong> achieved lower Mean Absolute Error (MAE) using <strong>Model 1 (Calendar Features)</strong>.
+                    Conversely, <strong>Appam, Chappathi, Porotta, and Biriyani</strong> achieved lower MAE using <strong>Model 2 (Calendar + Previous 3 Recorded Sales)</strong>.
+                    Therefore, the system automatically assigns Model 1 for Pathiri, and Model 2 for the remaining dishes.
+                </p>
+                <p>
+                    <strong>Graceful Fallback Handling:</strong> When fewer than three prior sales observations exist for a dish prior to the target date,
+                    the system transparently falls back to Model 1 without substituting artificial zeros.
+                </p>
+                <p class="text-indigo-800 italic">
+                    ⚠️ Machine learning demand forecasts are statistical estimates based on historical patterns and should be combined with kitchen staff experience and real-time footfall conditions.
+                </p>
+            </div>
+        </div>
+
+    </main>
+
+    <script src="/static/js/app.js"></script>
+    <script>
+        const USER_ROLE = "{{ role }}";
+        const dateInput = document.getElementById("target-date");
+
+        // Helper to format Date to YYYY-MM-DD
+        function formatDate(d) {
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // Initialize target date to tomorrow
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        dateInput.value = formatDate(tomorrow);
+
+        document.getElementById("btn-today").addEventListener("click", () => {
+            dateInput.value = formatDate(new Date());
+            fetchPredictions();
+        });
+
+        document.getElementById("btn-tomorrow").addEventListener("click", () => {
+            const tmr = new Date();
+            tmr.setDate(tmr.getDate() + 1);
+            dateInput.value = formatDate(tmr);
+            fetchPredictions();
+        });
+
+        document.getElementById("btn-run-forecast").addEventListener("click", fetchPredictions);
+        dateInput.addEventListener("change", fetchPredictions);
+
+        async function fetchPredictions() {
+            const targetDate = dateInput.value;
+            if (!targetDate) return;
+
+            const grid = document.getElementById("predictions-grid");
+            grid.innerHTML = `<div class="col-span-full py-16 text-center text-slate-400">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mb-2"></div>
+                <div>Generating ML forecasts for ${targetDate}...</div>
+            </div>`;
+
+            try {
+                const res = await fetch(`/api/forecast/predict?date=${targetDate}`);
+                const data = await res.json();
+
+                if (!res.ok || !data.success) {
+                    grid.innerHTML = `<div class="col-span-full p-6 bg-red-50 border border-red-200 text-red-700 rounded-2xl text-sm">
+                        ⚠️ ${data.error || 'Failed to generate demand prediction.'}
+                    </div>`;
+                    return;
+                }
+
+                renderContext(data);
+                renderPredictions(data.items, data.event);
+                renderPrepTable(data.items);
+            } catch (err) {
+                grid.innerHTML = `<div class="col-span-full p-6 bg-red-50 border border-red-200 text-red-700 rounded-2xl text-sm">
+                    ⚠️ Network error occurred while fetching predictions.
+                </div>`;
+            }
+        }
+
+        function renderContext(data) {
+            // Calendar
+            const cal = data.calendar_info || {};
+            const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+            const dayName = days[cal.day_of_week] || "";
+            document.getElementById("cal-details").textContent = `${dayName}, ${data.date}`;
+            document.getElementById("cal-sub").textContent = `Month ${cal.month} • Day of Year ${cal.day_of_year} • ${cal.is_weekend ? 'Weekend' : 'Weekday'}`;
+
+            // Event
+            const ev = data.event;
+            if (ev) {
+                document.getElementById("event-details").innerHTML = `<span class="text-violet-700 font-bold">🎉 ${escapeHtml(ev.event_name)}</span>`;
+                document.getElementById("event-sub").textContent = `Multiplier: ${ev.multiplier}x applied to baseline`;
+            } else {
+                document.getElementById("event-details").textContent = "Regular Day (1.0x)";
+                document.getElementById("event-sub").textContent = "No special event scheduled";
+            }
+
+            // Weather
+            const w = data.weather;
+            if (w) {
+                document.getElementById("weather-details").innerHTML = `${w.emoji || '🌤️'} ${w.description || 'Forecast'} (${w.max_temp_c ? w.max_temp_c + '°C' : '--'})`;
+                document.getElementById("weather-sub").textContent = w.demand_impact_note || "Normal demand expected";
+            } else {
+                document.getElementById("weather-details").textContent = "Weather Standard";
+                document.getElementById("weather-sub").textContent = "No severe weather notice";
+            }
+        }
+
+        function renderPredictions(items, eventInfo) {
+            const grid = document.getElementById("predictions-grid");
+            if (!items || !items.length) {
+                grid.innerHTML = `<div class="col-span-full py-12 text-center text-slate-400">No predictions generated.</div>`;
+                return;
+            }
+
+            grid.innerHTML = items.map(item => {
+                const isManual = item.final_source === "Manual Override";
+                const isEvent = item.event_multiplier && item.event_multiplier !== 1.0;
+                
+                const cardBorder = isManual ? "border-amber-400 bg-amber-50/10" : "border-slate-200 bg-white";
+                const badgeColor = item.model_used.includes("Model 1") ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-purple-50 text-purple-700 border-purple-200";
+
+                return `
+                <div class="rounded-2xl border p-6 shadow-sm hover:shadow-md transition space-y-4 ${cardBorder} fade-in">
+                    <!-- Header -->
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <h4 class="text-lg font-bold text-slate-900">${escapeHtml(item.item_name)}</h4>
+                            <span class="inline-block mt-1 text-xs font-semibold px-2 py-0.5 rounded-full border ${badgeColor}">
+                                ${escapeHtml(item.model_used)}
+                            </span>
+                        </div>
+                        <span class="text-2xl">${getItemIcon(item.item_name)}</span>
+                    </div>
+
+                    <!-- Model Selection Reason -->
+                    <div class="text-xs text-slate-500 italic bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                        ${escapeHtml(item.selection_reason)}
+                    </div>
+
+                    <!-- Prediction Breakdown -->
+                    <div class="space-y-2 pt-2 border-t border-slate-100 text-xs text-slate-600">
+                        <div class="flex justify-between items-center">
+                            <span>Raw ML Forecast:</span>
+                            <span class="font-bold text-slate-900 text-sm">${item.raw_prediction} ${item.unit}</span>
+                        </div>
+
+                        ${item.previous_sales && item.previous_sales.length ? `
+                        <div class="flex justify-between items-center text-slate-500">
+                            <span>Prior 3 Sales (Lags):</span>
+                            <span class="font-mono text-slate-700">${item.previous_sales.join(' kg, ')} kg</span>
+                        </div>` : ''}
+
+                        <div class="flex justify-between items-center">
+                            <span>Event Factor:</span>
+                            <span class="font-medium ${isEvent ? 'text-violet-700 font-bold' : 'text-slate-500'}">
+                                ${item.event_multiplier ? item.event_multiplier + 'x' : '1.0x'}
+                            </span>
+                        </div>
+
+                        ${item.manual_adjustment !== null ? `
+                        <div class="flex justify-between items-center text-amber-700 font-semibold bg-amber-50 px-2 py-1 rounded">
+                            <span>Owner Override:</span>
+                            <span>${item.manual_adjustment} ${item.unit}</span>
+                        </div>` : ''}
+                    </div>
+
+                    <!-- Final Preparation Recommendation -->
+                    <div class="pt-3 border-t border-slate-100">
+                        <div class="text-xs text-slate-500 uppercase tracking-wider font-semibold">Recommended Prep</div>
+                        <div class="flex items-baseline gap-2 mt-1">
+                            <span class="text-2xl font-black text-slate-900">${item.final_demand}</span>
+                            <span class="text-sm font-bold text-slate-600">${item.unit}</span>
+                            <span class="ml-auto text-xs font-bold px-2 py-0.5 rounded ${isManual ? 'bg-amber-100 text-amber-800' : (isEvent ? 'bg-violet-100 text-violet-800' : 'bg-emerald-100 text-emerald-800')}">
+                                ${item.final_source}
+                            </span>
+                        </div>
+                        <div class="text-[11px] text-slate-400 mt-1">${escapeHtml(item.status_note)}</div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        function renderPrepTable(items) {
+            const tbody = document.getElementById("prep-table-body");
+            if (!items || !items.length) {
+                tbody.innerHTML = `<tr><td colspan="6" class="px-6 py-6 text-center text-slate-400">No data available.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = items.map(item => {
+                const isManual = item.final_source === "Manual Override";
+                return `
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="px-6 py-4 font-bold text-slate-900 flex items-center gap-2">
+                        <span>${getItemIcon(item.item_name)}</span>
+                        <span>${escapeHtml(item.item_name)}</span>
+                    </td>
+                    <td class="px-6 py-4 text-slate-700 font-medium">${item.raw_prediction} ${item.unit}</td>
+                    <td class="px-6 py-4 text-slate-600">${item.event_multiplier ? item.event_multiplier + 'x' : '1.0x'}</td>
+                    <td class="px-6 py-4">
+                        ${item.manual_adjustment !== null ? `<span class="font-bold text-amber-700">${item.manual_adjustment} ${item.unit}</span>` : '<span class="text-slate-400">—</span>'}
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="text-base font-extrabold text-slate-900">${item.final_demand}</span>
+                        <span class="text-xs text-slate-500 font-semibold">${item.unit}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${isManual ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-700'}">
+                            ${escapeHtml(item.final_source)}
+                        </span>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+        }
+
+        function getItemIcon(name) {
+            const n = (name || '').toLowerCase();
+            if (n.includes('biriyani')) return '🍲';
+            if (n.includes('porotta')) return '🫓';
+            if (n.includes('pathiri')) return '🥟';
+            if (n.includes('chappathi')) return '🥞';
+            if (n.includes('appam')) return '🍳';
+            return '🍽️';
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        // Logout
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            await fetch('/logout', { method: 'POST' });
+            window.location.href = '/login';
+        });
+
+        // Initial Load
+        fetchPredictions();
+    </script>
+</body>
+</html>

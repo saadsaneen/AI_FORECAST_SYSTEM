@@ -132,6 +132,12 @@ def init_db():
         cursor.execute("UPDATE items SET price = 10.0 WHERE item_name = 'Pathiri' AND price = 0.0")
         cursor.execute("UPDATE items SET price = 160.0 WHERE item_name = 'Biriyani' AND price = 0.0")
 
+    # Seed Appam if not in items (Sprint 5)
+    cursor.execute("SELECT item_id FROM items WHERE LOWER(item_name) = 'appam'")
+    if not cursor.fetchone():
+        cursor.execute("INSERT INTO items (item_name, unit, price) VALUES (?, ?, ?)", ("Appam", "pieces", 10.0))
+        print("[DB] Initialized default item 'Appam'.")
+
     conn.commit()
     conn.close()
 
