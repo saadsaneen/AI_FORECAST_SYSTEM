@@ -3,20 +3,35 @@ import os
 import sqlite3
 import json
 from datetime import datetime, timedelta
+import database
+
+PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
+TEST_DB = os.path.join(PROJECT_DIR, "test_sprint2.db")
+PRODUCTION_DB = os.path.abspath("database.db")
+database.DB_NAME = TEST_DB
+
 from app import app
-from database import init_db, DB_NAME, get_db_connection
+from database import init_db, get_db_connection
 from import_historical_data import import_historical_data, CSV_FILENAME
 
 class TestSprint2(unittest.TestCase):
     def setUp(self):
+        database.DB_NAME = TEST_DB
+        if os.path.realpath(TEST_DB) == os.path.realpath(PRODUCTION_DB) or (
+            os.path.exists(TEST_DB)
+            and os.path.exists(PRODUCTION_DB)
+            and os.path.samefile(TEST_DB, PRODUCTION_DB)
+        ):
+            raise RuntimeError("Sprint 2 tests must not use the production database")
+
         app.config['TESTING'] = True
         app.config['SECRET_KEY'] = 'test-secret-key-sprint2'
         self.client = app.test_client()
 
         # Reset database for fresh test state
-        if os.path.exists(DB_NAME):
+        if os.path.exists(TEST_DB):
             try:
-                os.remove(DB_NAME)
+                os.remove(TEST_DB)
             except Exception:
                 pass
         init_db()

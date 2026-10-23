@@ -2,20 +2,35 @@ import unittest
 import os
 import sqlite3
 import json
+import database
+
+PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
+TEST_DB = os.path.join(PROJECT_DIR, "test_sprint1.db")
+PRODUCTION_DB = os.path.abspath("database.db")
+database.DB_NAME = TEST_DB
+
 from app import app
-from database import init_db, DB_NAME, get_db_connection
+from database import init_db, get_db_connection
 
 class TestSprint1(unittest.TestCase):
     def setUp(self):
+        database.DB_NAME = TEST_DB
+        if os.path.realpath(TEST_DB) == os.path.realpath(PRODUCTION_DB) or (
+            os.path.exists(TEST_DB)
+            and os.path.exists(PRODUCTION_DB)
+            and os.path.samefile(TEST_DB, PRODUCTION_DB)
+        ):
+            raise RuntimeError("Sprint 1 tests must not use the production database")
+
         # Configure app for testing
         app.config['TESTING'] = True
         app.config['SECRET_KEY'] = 'test-secret-key'
         self.client = app.test_client()
 
         # Remove existing test DB if any and re-init
-        if os.path.exists(DB_NAME):
+        if os.path.exists(TEST_DB):
             try:
-                os.remove(DB_NAME)
+                os.remove(TEST_DB)
             except Exception:
                 pass
         init_db()
@@ -127,7 +142,7 @@ class TestSprint1(unittest.TestCase):
         res_get = self.client.get('/items')
         self.assertEqual(res_get.status_code, 200)
         initial_items = res_get.get_json().get("items", [])
-        self.assertEqual(len(initial_items), 4)
+        self.assertEqual(len(initial_items), 5)
 
         # POST add item with price
         res_post = self.client.post('/items', json={"item_name": "Fish Curry", "unit": "plates", "price": 120.50})
@@ -139,7 +154,7 @@ class TestSprint1(unittest.TestCase):
         # GET items again
         res_get2 = self.client.get('/items')
         items2 = res_get2.get_json().get("items", [])
-        self.assertEqual(len(items2), 5)
+        self.assertEqual(len(items2), 6)
         added_item = next(item for item in items2 if item["item_id"] == item_id)
         self.assertEqual(added_item["price"], 120.50)
 
@@ -150,7 +165,7 @@ class TestSprint1(unittest.TestCase):
         # GET items after delete
         res_get3 = self.client.get('/items')
         items3 = res_get3.get_json().get("items", [])
-        self.assertEqual(len(items3), 4)
+        self.assertEqual(len(items3), 5)
 
 if __name__ == "__main__":
     unittest.main()

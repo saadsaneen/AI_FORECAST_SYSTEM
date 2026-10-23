@@ -16,18 +16,33 @@ import json
 import sqlite3
 from datetime import date, timedelta
 
-# Point to dedicated test database BEFORE importing app/database
-TEST_DB = "test_sprint4.db"
 import database
+
+PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
+TEST_DB = os.path.join(PROJECT_DIR, "test_sprint4.db")
+PRODUCTION_DB = os.path.abspath(database.DB_NAME)
 database.DB_NAME = TEST_DB
 
 from app import app
 from database import init_db, get_db_connection
 
+
+def _ensure_test_db_is_isolated():
+    same_path = os.path.realpath(TEST_DB) == os.path.realpath(PRODUCTION_DB)
+    same_file = (
+        os.path.exists(TEST_DB)
+        and os.path.exists(PRODUCTION_DB)
+        and os.path.samefile(TEST_DB, PRODUCTION_DB)
+    )
+    if same_path or same_file:
+        raise RuntimeError("Sprint 4 tests must not use the production database")
+
+
 class TestSprint4(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         database.DB_NAME = TEST_DB
+        _ensure_test_db_is_isolated()
         if os.path.exists(TEST_DB):
             try:
                 os.remove(TEST_DB)
@@ -37,7 +52,8 @@ class TestSprint4(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        database.DB_NAME = "database.db"
+        database.DB_NAME = TEST_DB
+        _ensure_test_db_is_isolated()
         if os.path.exists(TEST_DB):
             try:
                 os.remove(TEST_DB)
@@ -46,6 +62,7 @@ class TestSprint4(unittest.TestCase):
 
     def setUp(self):
         database.DB_NAME = TEST_DB
+        _ensure_test_db_is_isolated()
         app.config['TESTING'] = True
         app.config['SECRET_KEY'] = 'test-secret-sprint4'
         self.client = app.test_client()

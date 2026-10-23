@@ -1,111 +1,134 @@
-# Food Demand Forecasting System - Sprint 1
+# AI Food Demand Forecasting System
 
-A single-restaurant food demand forecasting system built with Flask, SQLite, and Tailwind CSS.
+The AI Food Demand Forecasting System supports daily operations at Rahath Foods. It provides sales and waste recording, weather and event context, manual demand adjustments, and ML-based demand forecasts with kitchen preparation estimates.
 
-## 📁 Project Folder Structure
+## Main Features
 
-```
+- User registration, login, sessions, and role-based access for owners and kitchen staff.
+- Owner food menu management.
+- Sales entry and filtered sales history with per-item quantity totals.
+- Waste logging and history.
+- Weather information through Open-Meteo and event management with demand multipliers.
+- Owner-managed manual demand adjustments.
+- ML demand predictions for five food items using saved scikit-learn models.
+- Kitchen preparation summary with estimated main raw material requirements.
+
+Sales reports can be viewed as filtered history and totals. CSV/PDF report export is not implemented. Generated prediction history is not stored.
+
+## Technology and Dependencies
+
+- Python and Flask for the web application and API.
+- SQLite for application data.
+- HTML, Tailwind CSS, and JavaScript for the interface.
+- scikit-learn, joblib, pandas, and NumPy for model loading and inference.
+- Open-Meteo for weather data; no API key is required.
+
+Dependencies are listed in `requirements.txt`:
+
+- Flask 3.0 or later
+- Werkzeug 3.0 or later
+- joblib 1.3 or later
+- scikit-learn 1.3 or later
+- pandas 2.0 or later
+- NumPy 1.24 or later
+
+## Project Structure
+
+```text
 AI_FORECAST_SYSTEM/
-├── app.py                  # Main Flask application entry point & page routes
-├── database.py             # SQLite helper functions & DB init / auto-seeding
-├── auth.py                 # Blueprint for registration, login, logout, & session check
-├── items.py                # Blueprint for Food Menu CRUD management
-├── requirements.txt        # Python dependency list (Flask, Werkzeug)
-├── test_sprint1.py         # Automated test suite for Sprint 1 functionality & security
-├── README.md               # Folder structure, setup, and manual testing guide
-├── static/
-│   └── js/
-│       └── app.js          # Client-side API fetch wrapper, session management, alert UI
-└── templates/
-    ├── login.html          # Login page UI
-    ├── register.html       # Staff registration page UI
-    ├── dashboard.html      # User dashboard page UI
-    └── food-menu.html      # Owner-only food menu management page UI
+├── app.py                         # Flask application and page routes
+├── auth.py                        # Registration, login, logout, and session checks
+├── config.py                      # Restaurant and weather configuration
+├── database.py                    # SQLite connection, schema, and seed data
+├── forecast.py                    # Events, adjustments, summary, and prediction API
+├── items.py                       # Food menu API
+├── ml_engine.py                   # Loads models and calculates predictions
+├── sales.py                       # Sales entry and history API
+├── waste.py                       # Waste logging API
+├── weather.py                     # Open-Meteo weather API
+├── import_historical_data.py      # Historical sales CSV import
+├── view_db.py                     # Database viewing utility
+├── historical_sales.csv           # Historical sales import data
+├── requirements.txt               # Python dependencies
+├── test_sprint1.py                # Authentication and menu tests
+├── test_sprint2.py                # Sales and CSV import tests
+├── test_sprint3.py                # Waste logging tests
+├── test_sprint4.py                # Weather, events, adjustments, and summary tests
+├── test_sprint5.py                # ML prediction and integration tests
+├── datasets/
+│   ├── sales_dataset.csv           # Model sales data
+│   └── waste_dataset.csv           # Waste data
+├── models/
+│   ├── rahath_model1_calendar.joblib
+│   └── rahath_model2_previous_sales.joblib
+├── static/js/app.js               # Shared client-side behavior
+└── templates/                     # Flask HTML pages
 ```
 
----
+`database.db` is created or used in the current working directory. SQLite database files are local runtime data and are excluded from version control.
 
-## 🛠️ Step-by-Step Setup & Running Locally
+## Windows Installation
 
-### 1. Prerequisites
-- Python 3.8+ installed on your system.
+Open PowerShell in the project directory. Create and activate a virtual environment, then install the dependencies:
 
-### 2. Install Dependencies
-Open a terminal in the project directory (`c:\Users\Saad Saneen\Documents\AI_FORECAST_SYSTEM`) and run:
-```bash
-pip install -r requirements.txt
+```powershell
+py -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 ```
 
-### 3. Run the Automated Tests (Optional but Recommended)
-To run the security and functional test suite:
-```bash
-python -m unittest test_sprint1.py
-```
-*(All 7 tests should pass cleanly).*
+If PowerShell blocks activation, follow your organization's execution policy or activate the environment using another supported shell. Keep the virtual environment active when running the application or tests.
 
-### 4. Start the Application
-Run the main Flask application:
-```bash
+## Database Setup and Application Run
+
+Run commands from the project directory because the application uses the relative path `database.db`.
+
+```powershell
+python database.py
 python app.py
 ```
-Output will show:
+
+`python database.py` initializes the schema and seeds default data. `python app.py` also calls `init_db()` before starting Flask, so the first command is optional. The development server listens at `http://127.0.0.1:5050`.
+
+The default development owner account is:
+
+- Username: `owner`
+- Password: `owner123`
+
+These credentials and the fallback Flask secret key are for local development only. Set a private `SECRET_KEY` environment variable and do not deploy the default credentials or Flask debug server.
+
+## Weather Configuration
+
+`config.py` reads these optional environment variables:
+
+- `RESTAURANT_LAT` (default: `9.9695`)
+- `RESTAURANT_LON` (default: `76.2984`)
+- `RESTAURANT_NAME` (default: `Rahath Foods`)
+- `RESTAURANT_CITY` (default: `Nettoor, Ernakulam, Kerala`)
+
+The default coordinates approximate Nettoor, Ernakulam. Set the latitude and longitude to the restaurant's location for more accurate weather. Weather responses are disabled when either coordinate is set to `0`.
+
+## Running Tests
+
+Run each suite separately from the project directory:
+
+```powershell
+python -m unittest test_sprint1 -v
+python -m unittest test_sprint2 -v
+python -m unittest test_sprint3 -v
+python -m unittest test_sprint4 -v
+python -m unittest test_sprint5 -v
 ```
-Starting Flask web server for Food Demand Forecasting System (Sprint 1) on port 5050...
- * Running on http://127.0.0.1:5050
-```
-Open your browser and navigate to `http://127.0.0.1:5050`.
 
----
+The suites initialize and use test databases. Sprint 1, 2, 3, and 5 use suite-specific paths with production-database guards. Sprint 4 uses the relative file `test_sprint4.db` and deletes/recreates it; keep the working directory at the project root and do not make that file a link to `database.db`.
 
-## 🧪 Manual Testing Instructions
+## Testing Results and Sprint 6 Status
 
-### Test 1: User Registration
+The reported result is 55 passing tests across five suites: Sprint 1 (7), Sprint 2 (5), Sprint 3 (11), Sprint 4 (19), and Sprint 5 (13). Sprint 6 documentation should be kept aligned with future test runs and report implementation.
 
-1. Navigate to `/register`.
-2. Create a new test account using the registration form.
-3. Submit the form.
-4. **Expected Result:** The account is created successfully and the user is redirected to the login page.
+Sales history and filtered quantity totals are available. CSV/PDF report generation and export are not implemented. Generated prediction history is not implemented. These remain limitations rather than completed Sprint 6 features.
 
-### Test 2: Login Behavior
+## Known Model Compatibility Limitation
 
-1. Navigate to `/login`.
-2. Enter the credentials of a registered test account.
-3. **Expected Result:** Valid credentials allow the user to log in and access the dashboard.
-4. Try an incorrect password.
-5. **Expected Result:** A generic `Invalid username or password` message is displayed.
-
-### Test 3: Session Persistence & Logout
-
-1. Log in using a registered test account.
-2. Refresh the dashboard.
-3. **Expected Result:** The logged-in session remains active.
-4. Click **Logout**.
-5. **Expected Result:** The user is redirected to the login page.
-6. Try accessing `/dashboard` after logout.
-7. **Expected Result:** Unauthenticated users are redirected to the login page.
-
-### Test 4: Food Menu Access
-
-1. Log in to the application.
-2. Navigate to the dashboard.
-3. Open the **Food Menu** section.
-4. **Expected Result:** Existing food items are displayed and authorized users can add or delete menu items.
-
-
-### Test 5: API Security Enforcement (403 Forbidden on direct API calls)
-1. Log in as staff user (`kitchen_staff_1`).
-2. Open Browser Developer Tools (`F12`) -> Console tab.
-3. Attempt to add a food item directly via API by pasting:
-   ```js
-   fetch('/items', {
-     method: 'POST',
-     headers: {'Content-Type': 'application/json'},
-     body: JSON.stringify({item_name: 'Hacked Item', unit: 'pieces'})
-   }).then(r => r.json()).then(console.log);
-   ```
-   - **Expected Result**: Console logs `{error: "Access denied: Owner privilege required"}` with HTTP status `403 Forbidden`.
-4. Attempt to delete item ID 1 directly via API:
-   ```js
-   fetch('/items/1', { method: 'DELETE' }).then(r => r.json()).then(console.log);
-   ```
-   - **Expected Result**: Response is blocked with HTTP status `403 Forbidden`.
+The saved models were trained with scikit-learn 1.6.1. Loading them with scikit-learn 1.9.1 produced an `InconsistentVersionWarning`. The dependency currently allows a range of scikit-learn versions. Use the validated training/runtime version or retrain and verify the models before changing versions.

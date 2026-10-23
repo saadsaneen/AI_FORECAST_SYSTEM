@@ -17,9 +17,11 @@ import os
 import json
 from datetime import date, timedelta
 
-# Point to dedicated test database BEFORE importing app/database
-TEST_DB = "test_sprint5.db"
 import database
+
+PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
+TEST_DB = os.path.join(PROJECT_DIR, "test_sprint5.db")
+PRODUCTION_DB = os.path.abspath(database.DB_NAME)
 database.DB_NAME = TEST_DB
 
 from app import app
@@ -29,10 +31,23 @@ from ml_engine import (
     predict_for_item, predict_all_for_date, FOOD_ITEMS_CONFIG
 )
 
+
+def _ensure_test_db_is_isolated():
+    same_path = os.path.realpath(TEST_DB) == os.path.realpath(PRODUCTION_DB)
+    same_file = (
+        os.path.exists(TEST_DB)
+        and os.path.exists(PRODUCTION_DB)
+        and os.path.samefile(TEST_DB, PRODUCTION_DB)
+    )
+    if same_path or same_file:
+        raise RuntimeError("Sprint 5 tests must not use the production database")
+
+
 class TestSprint5(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         database.DB_NAME = TEST_DB
+        _ensure_test_db_is_isolated()
         if os.path.exists(TEST_DB):
             try:
                 os.remove(TEST_DB)
@@ -42,7 +57,8 @@ class TestSprint5(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        database.DB_NAME = "database.db"
+        database.DB_NAME = TEST_DB
+        _ensure_test_db_is_isolated()
         if os.path.exists(TEST_DB):
             try:
                 os.remove(TEST_DB)
